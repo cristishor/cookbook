@@ -4,7 +4,9 @@ def getDataFromDB(dbName = DB_FILE_NAME):
     with open(dbName, "r") as f:
         entries = []
         for line in f:
-            entries.append(detokenize(line))
+            entryObj = detokenize(line)
+            entries.append(entryObj)
+            print(entryObj)
         return entries
 
 def addLineToFile(line, dbName = DB_FILE_NAME):
@@ -21,19 +23,16 @@ def addNewRecipeToDB(index, name, date = None, dbName = DB_FILE_NAME):
     addLineToFile(name, dbName)
         
 def detokenize(line):
-    dot_index = line.find('.')
-    entryIndex = int(line[:dot_index])
-
-    name_index = line.find('{')
-    name = line[dot_index+1:name_index]
-    entryObj = {'index':entryIndex, 'name':name}
+    recordIndex = line.find('{')
+    entryName = line[:recordIndex]
+    entryObj = {entryName:None}
 
     # if the entry has no date recorded, return the object w/ name and index
     if(line.find('{}') != -1):
         return entryObj
 
-    entryObj.update({'dates':[]})
     date_index = 0
+    datesArray = []
     while True:
         next_date_index = line.find('{', date_index)
 
@@ -48,10 +47,10 @@ def detokenize(line):
         m = int(date[s1+1:s2])
         y = int(date[s2+1:])
 
-        entryObj['dates'].append({'d':d,'m':m,'y':y})
+        datesArray.append({'d':d,'m':m,'y':y})
 
         date_index = next_date_index + 1
-    
+    entryObj = {entryName:datesArray}
     return entryObj
 
         
@@ -61,8 +60,8 @@ date = {'d':23,'m':4,'y':2024}
 
 index = 3
 #addNewRecipeToDB(index, food, date)
-
-print(getDataFromDB())
+print()
+getDataFromDB()
 
 
 #Food1{1/1/1}{2/2/2}
