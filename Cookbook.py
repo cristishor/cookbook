@@ -2,7 +2,9 @@
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-PRINT_DETOKENIZED_DATA_AT_READ = 0 
+TEST_SIMULATION = 0
+PRINT_DETOKENIZED_DATA_AT_READ = 0
+PRINT_NEW_OR_EDITED_ENTRY = 0
 
 
 ### FETCH_DATA_FROM_DB method
@@ -10,24 +12,23 @@ def fetchDataFromDB(dbName = DB_FILE_NAME):
 
     def getDataFromDB(dbName):
         with open(dbName, "r") as f:
-            entries = []
+            entries = {}
             if PRINT_DETOKENIZED_DATA_AT_READ: print()
             for line in f:
-                entryObj = detokenize(line)
-                entries.append(entryObj)
+                name, dates = detokenize(line)
+                entries[name] = dates
                 if PRINT_DETOKENIZED_DATA_AT_READ:
-                    print(entryObj)
+                    print(name, '-', entries[name])
             if PRINT_DETOKENIZED_DATA_AT_READ: print()
             return entries
 
     def detokenize(line):
         recordIndex = line.find('{')
         entryName = line[:recordIndex]
-        entryObj = {entryName:None}
 
         # if the entry has no date recorded, return the object w/ name and index
         if(line.find('{}') != -1):
-            return entryObj
+            return entryName, None
 
         date_index = 0
         datesArray = []
@@ -48,29 +49,64 @@ def fetchDataFromDB(dbName = DB_FILE_NAME):
             datesArray.append({'d':d,'m':m,'y':y})
 
             date_index = next_date_index + 1
-        entryObj = {entryName:datesArray}
-        return entryObj
+        return entryName, datesArray
     
     return getDataFromDB(dbName)
     
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-def addLineToFile(line, dbName = DB_FILE_NAME):
-    with open(dbName, "a") as f:
-        if (not line.endswith('\n')): 
-            line = line.strip() + '\n'
-        f.write(line)
+def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB_FILE_NAME ):
+    def addLineToFile(line, dbName):
+        with open(dbName, "a") as f:
+            if (not line.endswith('\n')): 
+                line = line.strip() + '\n'
+            f.write(line)
 
-def addNewRecipeToDB(index, name, date = None, dbName = DB_FILE_NAME):
-    if(date):
-        name = str(index) + '.' + name + '{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
+    def addNewRecipeToDB(name, dbName, date = None, ):
+        if(date):
+            name = name + '{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
+        else:
+            name =  name + '{}'
+        addLineToFile(name, dbName)
+
+    if recipeName not in ALL_RECIPES:
+        # new recipe
+        recipeObj = {recipeName:newDate}
+        ALL_RECIPES.append(recipeObj)
+        if PRINT_NEW_OR_EDITED_ENTRY:
+            print('\n', recipeObj)
+        addNewRecipeToDB(recipeName, dbName, newDate)
+        return 'New recipe added successfully!'
+    elif newDate is not None:
+        # new entry
+        currRecipe = ALL_RECIPES[recipeName]
+        if PRINT_NEW_OR_EDITED_ENTRY:
+            print('\n', currRecipe)
+        if newDate in currRecipe:
+            return 'Warning: the chosen date already appears in the records!'
+        for index, dateRecord in enumerate(currRecipe):
+            # TO DO: rethink the logic from here -> looks gnarly
+            if dateRecord['y'] < newDate['y']:
+                continue
+            if dateRecord['m'] < newDate['m'] and dateRecord['y'] == newDate['y']:
+                continue
+            if dateRecord['d'] < newDate['d'] and dateRecord['m'] == newDate['m'] and dateRecord['y'] == newDate['y']:
+                continue
+            currRecipe.insert(index, newDate)
+            break
+        if not TEST_SIMULATION:
+            # TO DO: add the new entry in the DB too
+            pass
+        if PRINT_NEW_OR_EDITED_ENTRY:
+            print(currRecipe)
+        return 'New entry added successfully!'
     else:
-        name = str(index) + '.' + name + '{}'
-    addLineToFile(name, dbName)
+        # old recipe, no new entry
+        return 'Warning: date not provided to append to the existing recipe!' 
 
 
-# by deafult it uses DB_FILE_NAME
-food = 'food_name'
-date = {'d':23,'m':4,'y':2024}
 
-#addNewRecipeToDB(index, food, date)
+
+
+# ALL_RECIPES = fetchDataFromDB()
+
