@@ -18,18 +18,20 @@ def test_Create_New_Entry(doTest = 0):
         Cookbook.PRINT_NEW_OR_EDITED_ENTRY = 1
         Cookbook.TEST_SIMULATION = 1
 
-        food, date = [], []
-        food.append('food_multiple_entries_1')
-        date.append({'d':2,'m':2,'y':2023})
-        food.append('food_multiple_entries_2')
-        date.append({'d':10,'m':9,'y':2023})
-        food.append('food_multiple_entries_3')
-        date.append({'d':15,'m':9,'y':2023})
+        food_date = [
+            'new_food', {'d':1,'m':1,'y':2024},
+            'food_multiple_entries_1', {'d':2,'m':2,'y':2023},
+            'food_multiple_entries_2', {'d':10,'m':9,'y':2023},
+            'food_multiple_entries_3', {'d':15,'m':9,'y':2023},
+            'already_existing_food', None,
+            'already_existing_food', {'d':1,'m':1,'y':2024}
+        ]
 
         # Call processes
+        print('\n##### START TEST ######')
         ALL_RECIPES = Cookbook.fetchDataFromDB(TEST_DB_1)
-        for i in range(3):
-            msg = Cookbook.sendNewOrEditedDataToDB(ALL_RECIPES, food[i], date[i])
+        for i in range(0, len(food_date), 2):
+            msg = Cookbook.sendNewOrEditedDataToDB(ALL_RECIPES, food_date[i], food_date[i+1])
             print(msg)
 
         # Deinit flags / variables

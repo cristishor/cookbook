@@ -69,21 +69,23 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
             name =  name + '{}'
         addLineToFile(name, dbName)
 
+    # NEW RECIPE
     if recipeName not in ALL_RECIPES:
-        # new recipe
-        recipeObj = {recipeName:newDate}
-        ALL_RECIPES.append(recipeObj)
-        if PRINT_NEW_OR_EDITED_ENTRY:
-            print('\n', recipeObj)
-        addNewRecipeToDB(recipeName, dbName, newDate)
+        ALL_RECIPES[recipeName] = newDate
+        if not TEST_SIMULATION:
+            addNewRecipeToDB(recipeName, dbName, newDate)
+
+        if PRINT_NEW_OR_EDITED_ENTRY: print('\n', recipeName, '-', newDate)
         return 'New recipe added successfully!'
+    
+    # NEW ENTRY
     elif newDate is not None:
-        # new entry
         currRecipe = ALL_RECIPES[recipeName]
-        if PRINT_NEW_OR_EDITED_ENTRY:
-            print('\n', currRecipe)
+
+        if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', recipeName, '-', currRecipe)
         if newDate in currRecipe:
             return 'Warning: the chosen date already appears in the records!'
+        
         for index, dateRecord in enumerate(currRecipe):
             # TO DO: rethink the logic from here -> looks gnarly
             if dateRecord['y'] < newDate['y']:
@@ -97,11 +99,13 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
         if not TEST_SIMULATION:
             # TO DO: add the new entry in the DB too
             pass
-        if PRINT_NEW_OR_EDITED_ENTRY:
-            print(currRecipe)
+
+        if PRINT_NEW_OR_EDITED_ENTRY: print('NEW:', recipeName, '-', currRecipe)
         return 'New entry added successfully!'
+    
+    # old recipe, no new entry
     else:
-        # old recipe, no new entry
+        if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', recipeName, '-', ALL_RECIPES[recipeName])
         return 'Warning: date not provided to append to the existing recipe!' 
 
 
