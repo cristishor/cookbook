@@ -20,7 +20,7 @@ def test_Create_New_Entry(doTest = 0):
 
         food_date = [
             'new_food', {'d':1,'m':1,'y':2024},
-            'food_multiple_entries_1', {'d':2,'m':2,'y':2023},
+            'food_multiple_entries_1', {'d':2,'m':2,'y':2025},
             'food_multiple_entries_2', {'d':10,'m':9,'y':2023},
             'food_multiple_entries_3', {'d':15,'m':9,'y':2023},
             'already_existing_food', None,
@@ -41,4 +41,4 @@ def test_Create_New_Entry(doTest = 0):
 
 #### RUN TESTS ###
 test_Fetch_Data_From_DB()
-test_Create_New_Entry(1)
+test_Create_New_Entry()

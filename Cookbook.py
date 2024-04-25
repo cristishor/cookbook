@@ -2,7 +2,7 @@
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-TEST_SIMULATION = 0
+TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
 PRINT_DETOKENIZED_DATA_AT_READ = 0
 PRINT_NEW_OR_EDITED_ENTRY = 0
 
@@ -88,18 +88,27 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
         
         for index, dateRecord in enumerate(currRecipe):
             # TO DO: rethink the logic from here -> looks gnarly
-            if dateRecord['y'] < newDate['y']:
+            if dateRecord['y'] > newDate['y']:
                 continue
-            if dateRecord['m'] < newDate['m'] and dateRecord['y'] == newDate['y']:
+            if dateRecord['m'] > newDate['m'] and dateRecord['y'] == newDate['y']:
                 continue
-            if dateRecord['d'] < newDate['d'] and dateRecord['m'] == newDate['m'] and dateRecord['y'] == newDate['y']:
+            if dateRecord['d'] > newDate['d'] and dateRecord['m'] == newDate['m'] and dateRecord['y'] == newDate['y']:
                 continue
             currRecipe.insert(index, newDate)
             break
         if not TEST_SIMULATION:
-            # TO DO: add the new entry in the DB too
-            pass
+            # FANCY (maybe) TO DO: do this w/o loading everything into the memory
+            # nor by copying contents to a temp file
+            newLine = tokenize(recipeName, currRecipe)
 
+            with open(dbName, 'r') as f:
+                lines = f.readlines()
+            with open(dbName, 'w') as f:
+                for line in lines:
+                    if recipeName in line:
+                        f.write(newLine + '\n')
+                    else:
+                        f.write(line)
         if PRINT_NEW_OR_EDITED_ENTRY: print('NEW:', recipeName, '-', currRecipe)
         return 'New entry added successfully!'
     
@@ -108,9 +117,29 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
         if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', recipeName, '-', ALL_RECIPES[recipeName])
         return 'Warning: date not provided to append to the existing recipe!' 
 
+def tokenize(name, dateArray):
+    newLine = name
+    if dateArray == None:
+        newLine = newLine + '{}'
+    else:
+        for date in dateArray:
+            newLine = newLine +'{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
+        return newLine
 
+ALL_RECIPES = fetchDataFromDB()
+name = 'food_multiple_entries_1'
+date = {'d':2,'m':2,'y':2023}
+print(sendNewOrEditedDataToDB(ALL_RECIPES, name, date))
 
-
-
-# ALL_RECIPES = fetchDataFromDB()
-
+### TO DO:
+# (1) Add some input sanitization : if newDate > todayDate => cant do
+# (2) Refactor a bit the tokenize stuff -> using 2 diff functions for read and write from/to the db
+# (3) Add an edit (+ delete) recipe/entry + extend tests
+#
+# ...
+#
+# (n-1) When reading the data from the DB, construct TWO stacks: most recent and second most recent entries
+#       for each recipe. 
+#       Maybe also do a mean, for every food, over the course of the last year, a coefficient of how much of that
+#       certain food we have eaten -> might be useful
+# (n) About the recommending system: what if we have gaps in in the journal 
