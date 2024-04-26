@@ -38,6 +38,11 @@ def test_Create_New_Entry(doTest = 0):
         Cookbook.PRINT_NEW_OR_EDITED_ENTRY = 0
         Cookbook.TEST_SIMULATION = 0
                 
+def test_Edit_Entry(dotest = 0):
+    if doTest:
+        # Init flags / variables
+        Cookbook.PRINT_NEW_OR_EDITED_ENTRY = 1
+
 
 #### RUN TESTS ###
 test_Fetch_Data_From_DB()

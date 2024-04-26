@@ -4,7 +4,7 @@ DB_FILE_NAME = 'test001.db'
 # GLOBAL DEBUG FLAGS
 TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
 PRINT_DETOKENIZED_DATA_AT_READ = 0
-PRINT_NEW_OR_EDITED_ENTRY = 0
+PRINT_NEW_OR_EDITED_ENTRY = 1
 
 
 ### FETCH_DATA_FROM_DB method
@@ -86,6 +86,7 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
         if newDate in currRecipe:
             return 'Warning: the chosen date already appears in the records!'
         
+        lastItemFlag = 1
         for index, dateRecord in enumerate(currRecipe):
             # TO DO: rethink the logic from here -> looks gnarly
             if dateRecord['y'] > newDate['y']:
@@ -95,20 +96,12 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
             if dateRecord['d'] > newDate['d'] and dateRecord['m'] == newDate['m'] and dateRecord['y'] == newDate['y']:
                 continue
             currRecipe.insert(index, newDate)
+            lastItemFlag = 0
             break
+        if lastItemFlag:
+            currRecipe.append(newDate)
         if not TEST_SIMULATION:
-            # FANCY (maybe) TO DO: do this w/o loading everything into the memory
-            # nor by copying contents to a temp file
-            newLine = tokenize(recipeName, currRecipe)
-
-            with open(dbName, 'r') as f:
-                lines = f.readlines()
-            with open(dbName, 'w') as f:
-                for line in lines:
-                    if recipeName in line:
-                        f.write(newLine + '\n')
-                    else:
-                        f.write(line)
+            rewriteLine(recipeName, currRecipe, dbName)
         if PRINT_NEW_OR_EDITED_ENTRY: print('NEW:', recipeName, '-', currRecipe)
         return 'New entry added successfully!'
     
@@ -117,6 +110,21 @@ def sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate = None, dbName = DB
         if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', recipeName, '-', ALL_RECIPES[recipeName])
         return 'Warning: date not provided to append to the existing recipe!' 
 
+
+
+def rewriteLine(recipeName, datesArray, dbName):
+    newLine = tokenize(recipeName, datesArray)
+    
+    # FANCY (maybe) TO DO: do this w/o loading everything into the memory
+    # nor by copying contents to a temp file
+    with open(dbName, 'r') as f:
+        lines = f.readlines()
+    with open(dbName, 'w') as f:
+        for line in lines:
+            if recipeName in line:
+                f.write(newLine + '\n')
+            else:
+                f.write(line)
 def tokenize(name, dateArray):
     newLine = name
     if dateArray == None:
@@ -125,18 +133,45 @@ def tokenize(name, dateArray):
         for date in dateArray:
             newLine = newLine +'{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
         return newLine
+    
+
+
+def editOrDeleteRecipeDate(ALL_RECIPES, recipeName, oldDate, newDate = None):
+    # (1) check whether desired newDate is valid
+    datesArray = ALL_RECIPES[recipeName]
+    if oldDate not in datesArray:
+        return 'Fatal error: trying to access an entry (date) non existent to this recipe'
+    if newDate != None and newDate in datesArray:
+        return 'Error: the chosen date already appears in the records!'
+    datesArray = deleteTargetDate(datesArray, oldDate)
+    sendNewOrEditedDataToDB(ALL_RECIPES, recipeName, newDate)
+    if newDate == None:
+        if PRINT_NEW_OR_EDITED_ENTRY: print('\nNEW:', recipeName, '-', datesArray)
+        return 'Entry deleted successfully!'
+    return 'Entry modified successfully!'
+def deleteTargetDate(datesArray, targetDate):
+    for date in datesArray:
+        if date == targetDate:
+            return [date for date in datesArray if date != targetDate]
+    
+
 
 ALL_RECIPES = fetchDataFromDB()
 name = 'food_multiple_entries_1'
-date = {'d':2,'m':2,'y':2023}
-print(sendNewOrEditedDataToDB(ALL_RECIPES, name, date))
+#newDate = {'d':6,'m':9,'y':2021}
+#oldDate = {'d':2,'m':2,'y':2027}
+oldDate = {'d':2,'m':2,'y':2023}
+print(editOrDeleteRecipeDate(ALL_RECIPES, name, oldDate))
 
 ### TO DO:
-# (1) Add some input sanitization : if newDate > todayDate => cant do
+# (1) Add some input sanitization : if newDate > todayDate => cant do;
+#     or if the date is not a valid one <= (!) task
 # (2) Refactor a bit the tokenize stuff -> using 2 diff functions for read and write from/to the db
+#     !! use better / more uniform naming conventions !! 
 # (3) Add an edit (+ delete) recipe/entry + extend tests
 #
 # ...
+# (!) A very special task: create myself a calendar module
 #
 # (n-1) When reading the data from the DB, construct TWO stacks: most recent and second most recent entries
 #       for each recipe. 
