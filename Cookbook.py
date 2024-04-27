@@ -162,6 +162,15 @@ name = 'food_multiple_entries_1'
 oldDate = {'d':2,'m':2,'y':2023}
 print(editOrDeleteRecipeDate(ENTRIES, name, oldDate))
 
+
+# 4 big commands -> READ (an entry)
+#                   ADD (entry OR date)
+#                   EDIT (entryName OR date)
+#                   DELETE (entry or date)
+# -> Update the debug system/flags
+# -> Update the writeline -> use FP
+# -> Rename/reuse/rewire methods
+
 ### TO DO:
 # (1) Add some input sanitization : if newDate > todayDate => cant do;
 #     or if the date is not a valid one <= (!) task
