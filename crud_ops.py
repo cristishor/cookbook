@@ -27,6 +27,13 @@ def READ_ENTRIES(dbName = DB_FILE_NAME):
                 print(entryName, '-', ENTRIES[entryName], '\n')
         return ENTRIES
 
+# ~ READ ENTRY ~
+def READ_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
+    if entryName not in ENTRIES:
+        return 'Error: bad entry name!'
+    history = ENTRIES[entryName]
+    return history
+
 # ~ CREATE ENTRY ~
 def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
     msg_return_list = [
@@ -248,14 +255,6 @@ def rewriteLineInFile(newLine, entryName, dbName):
             else:
                 f.write(line)
 
-
-# 4 big commands -> READ (an entry)
-#                   ADD (entry OR date)
-#                   EDIT (entryName OR date)
-#                   DELETE (entry or date)
-# -> Update the debug system/flags
-# -> Update the writeline -> use FP
-# -> Rename/reuse/rewire methods
 
 ### TO DO:
 # (1) Add some input sanitization : if newDate > todayDate => cant do;
