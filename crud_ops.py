@@ -257,14 +257,8 @@ def rewriteLineInFile(newLine, entryName, dbName):
 
 
 ### TO DO:
-# (1) Add some input sanitization : if newDate > todayDate => cant do;
-#     or if the date is not a valid one <= (!) task
-# (2) Refactor a bit the tokenize stuff -> using 2 diff functions for read and write from/to the db
-#     !! use better / more uniform naming conventions !! 
-# (3) Add an edit (+ delete) recipe/entry + extend tests
-#
-# ...
-# (!) A very special task: create myself a calendar module
+# (1) Add some input sanitization : if the date is not a valid one
+#       (!) A very special task: create myself a calendar module
 #
 # (n-1) When reading the data from the DB, construct TWO stacks: most recent and second most recent entries
 #       for each recipe. 
