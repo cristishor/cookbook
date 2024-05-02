@@ -2,92 +2,61 @@
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
-PRINT_DETOKENIZED_DATA_AT_READ = 0
-PRINT_NEW_OR_EDITED_ENTRY = 1
+_TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
+
+_PRINT_READ_DATA = 0
+_PRINT_CREATE_DATA = 0
+_PRINT_UPDATE_DATA = 0
 
 
-### FETCH_DATA_FROM_DB method
-def fetchDataFromDB(dbName = DB_FILE_NAME):
+### READ ENTRIES
+def READ_ENTRIES(dbName = DB_FILE_NAME):
 
-    def getDataFromDB(dbName):
-        with open(dbName, "r") as f:
-            ENTRIES = []
-            if PRINT_DETOKENIZED_DATA_AT_READ: print()
-            for line in f:
-                entryName, history = detokenize(line)
-                ENTRIES[entryName] = history
-                if PRINT_DETOKENIZED_DATA_AT_READ:
-                    print(entryName, '-', ENTRIES[entryName])
-            if PRINT_DETOKENIZED_DATA_AT_READ: print()
-            return ENTRIES
+    if _PRINT_READ_DATA: print('\nREAD_ENTRIES call:')
 
-    def detokenize(line):
-        name_index = line.find('{')
-        entryName = line[:name_index]
+    with open(dbName, "r") as f:
+        ENTRIES = {}
+        if _PRINT_READ_DATA: print()
+        for line in f:
+            entryName, history = detokenizer(line)
+            ENTRIES[entryName] = history
+            if _PRINT_READ_DATA:
+                print(entryName, '-', ENTRIES[entryName], '\n')
+        return ENTRIES
 
-        # if the entry has no date recorded, return the object w/ name and index
-        if(line.find('{}') != -1):
-            return entryName, None
+### CREATE ENTRY (write)
+def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
+    msg_return_list = [
+        'New entry added successfully!',
+        'Warning: the chosen date already appears in the records!',
+        'New date entry added successfully!',
+        'Warning: date not provided to append to the existing recipe!'
+    ]
 
-        date_index = 0
-        history = []
-        while True:
-            next_date_index = line.find('{', date_index)
-
-            if next_date_index == -1: 
-                break
-            
-            closing_bracket_index = line.find('}', next_date_index)
-            date = line[next_date_index+1:closing_bracket_index]
-            s1 = date.find('/')
-            s2 = date.find('/', s1+1)
-            d = int(date[:s1])
-            m = int(date[s1+1:s2])
-            y = int(date[s2+1:])
-
-            history.append({'d':d,'m':m,'y':y})
-
-            date_index = next_date_index + 1
-        return entryName, history
+    if _PRINT_CREATE_DATA: print('\nCREATE_ENTRY call:')
     
-    return getDataFromDB(dbName)
-    
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-
-def sendNewOrEditedDataToDB(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME ):
-    def addLineToFile(line, dbName):
-        with open(dbName, "a") as f:
-            if (not line.endswith('\n')): 
-                line = line.strip() + '\n'
-            f.write(line)
-
-    def addNewRecipeToDB(entryName, dbName, date = None ):
-        if(date):
-            entryName = entryName + '{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
-        else:
-            entryName =  entryName + '{}'
-        addLineToFile(entryName, dbName)
-
-    # NEW RECIPE
+    # 1 - NEW entry
     if entryName not in ENTRIES:
         ENTRIES[entryName] = newDate
-        if not TEST_SIMULATION:
-            addNewRecipeToDB(entryName, dbName, newDate)
+        if not _TEST_SIMULATION:
+            newLine = tokenizer(entryName, [newDate])
+            addLineToFile(newLine, dbName)
 
-        if PRINT_NEW_OR_EDITED_ENTRY: print('\n', entryName, '-', newDate)
-        return 'New recipe added successfully!'
+        if _PRINT_CREATE_DATA: print('New entry added:', entryName, '-', newDate, '\n', msg_return_list[0])
+
+        return msg_return_list[0]
     
-    # NEW ENTRY
+    # 2 - OLD entry, NEW date
     elif newDate is not None:
-        currEntry = ENTRIES[entryName]
+        currHistory = ENTRIES[entryName]
 
-        if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', entryName, '-', currEntry)
-        if newDate in currEntry:
-            return 'Warning: the chosen date already appears in the records!'
+        if newDate in currHistory:
+            return msg_return_list[1]
         
+        if _PRINT_CREATE_DATA: print('OLD:', entryName, '-', currHistory)
+
         lastItemFlag = 1
-        for index, date in enumerate(currEntry):
+        for index, date in enumerate(currHistory):
             # TO DO: rethink the logic from here -> looks gnarly
             if date['y'] > newDate['y']:
                 continue
@@ -95,36 +64,41 @@ def sendNewOrEditedDataToDB(ENTRIES, entryName, newDate = None, dbName = DB_FILE
                 continue
             if date['d'] > newDate['d'] and date['m'] == newDate['m'] and date['y'] == newDate['y']:
                 continue
-            currEntry.insert(index, newDate)
+            currHistory.insert(index, newDate)
             lastItemFlag = 0
             break
         if lastItemFlag:
-            currEntry.append(newDate)
-        if not TEST_SIMULATION: rewriteLine(entryName, currEntry, dbName) # TO DO: move the condition in the func
-        if PRINT_NEW_OR_EDITED_ENTRY: print('NEW:', entryName, '-', currEntry)
-        return 'New entry added successfully!'
+            currHistory.append(newDate)
+
+        if not _TEST_SIMULATION: 
+            newLine = tokenizer(entryName, currHistory)
+            rewriteLineInFile(newLine, entryName, dbName)
+
+        if _PRINT_CREATE_DATA: print('NEW:', entryName, '-', currHistory, '\n', msg_return_list[2])
+
+        return msg_return_list[2]
     
-    # old recipe, no new entry
+    # 3 - OLD entry, NULL date
     else:
-        if PRINT_NEW_OR_EDITED_ENTRY: print('\nOLD:', entryName, '-', ENTRIES[entryName])
-        return 'Warning: date not provided to append to the existing recipe!' 
-
-
-
-def rewriteLine(entryName, history, dbName):
-    newLine = tokenize(entryName, history)
+        if _PRINT_CREATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName], '\n', msg_return_list[3])
+        return msg_return_list[3]
     
-    # FANCY (maybe) TO DO: do this w/o loading everything into the memory
-    # nor by copying contents to a temp file
-    with open(dbName, 'r') as f:
-        lines = f.readlines()
-    with open(dbName, 'w') as f:
-        for line in lines:
-            if entryName in line:
-                f.write(newLine + '\n')
-            else:
-                f.write(line)
-def tokenize(entryName, history):
+### DELETE ENTRY
+def DELETE_ENTRY():
+    # delete entry date
+
+    # delete entry completely 
+    pass
+
+### UPDATE ENTRY HISTORY
+def UPDATE_ENTRY():
+    # update entry date
+
+    # update entry name
+    pass
+
+# @token
+def tokenizer(entryName, history):
     newLine = entryName
     if history == None:
         newLine = newLine + '{}'
@@ -133,6 +107,60 @@ def tokenize(entryName, history):
             newLine = newLine +'{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
         return newLine
     
+def detokenizer(line):
+    name_index = line.find('{')
+    entryName = line[:name_index]
+
+    # if the entry has no date recorded, return the object w/ name and index
+    if(line.find('{}') != -1):
+        return entryName, None
+
+    date_index = 0
+    history = []
+    while True:
+        next_date_index = line.find('{', date_index)
+
+        if next_date_index == -1: 
+            break
+        
+        closing_bracket_index = line.find('}', next_date_index)
+        date = line[next_date_index+1:closing_bracket_index]
+        s1 = date.find('/')
+        s2 = date.find('/', s1+1)
+        d = int(date[:s1])
+        m = int(date[s1+1:s2])
+        y = int(date[s2+1:])
+
+        history.append({'d':d,'m':m,'y':y})
+
+        date_index = next_date_index + 1
+    return entryName, history
+
+# @file
+def addLineToFile(line, dbName):
+    with open(dbName, "a") as f:
+        if (not line.endswith('\n')): 
+            line = line.strip() + '\n'
+        f.write(line)
+
+def rewriteLineInFile(newLine, entryName, dbName):
+    # ̵T̵O̵ ̵D̵O: do this w/o loading everything into the memory
+    # nor by copying contents to a temp file
+    # ... 
+    # later edit: this is not possible due to python abstraction 
+    # => TO DO: good oportunity to call some C functions from python :)
+    with open(dbName, 'r') as f:
+        lines = f.readlines()
+    with open(dbName, 'w') as f:
+        for line in lines:
+            if entryName in line:
+                f.write(newLine + '\n')
+            else:
+                f.write(line)
+
+
+
+
 
 
 def editOrDeleteRecipeDate(ENTRIES, entryName, oldDate, newDate = None):
@@ -143,9 +171,9 @@ def editOrDeleteRecipeDate(ENTRIES, entryName, oldDate, newDate = None):
     if newDate != None and newDate in history:
         return 'Error: the chosen date already appears in the records!'
     history = deleteTargetDate(history, oldDate)
-    sendNewOrEditedDataToDB(ENTRIES, entryName, newDate)
+    #sendNewOrEditedDataToDB(ENTRIES, entryName, newDate)
     if newDate == None:
-        if PRINT_NEW_OR_EDITED_ENTRY: print('\nNEW:', entryName, '-', history)
+        if _PRINT_UPDATE_DATA: print('\nNEW:', entryName, '-', history)
         return 'Entry deleted successfully!'
     return 'Entry modified successfully!'
 def deleteTargetDate(history, targetDate):
@@ -155,12 +183,12 @@ def deleteTargetDate(history, targetDate):
     
 
 
-ENTRIES = fetchDataFromDB()
+ENTRIES = READ_ENTRIES()
 name = 'food_multiple_entries_1'
 #newDate = {'d':6,'m':9,'y':2021}
 #oldDate = {'d':2,'m':2,'y':2027}
 oldDate = {'d':2,'m':2,'y':2023}
-print(editOrDeleteRecipeDate(ENTRIES, name, oldDate))
+# print(editOrDeleteRecipeDate(ENTRIES, name, oldDate))
 
 
 # 4 big commands -> READ (an entry)
