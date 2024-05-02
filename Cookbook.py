@@ -2,13 +2,13 @@
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-_TEST_SIMULATION = 1 # doesn't save the changes to the big DICT object to the DB
+_TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
 
-_PRINT_CRUD_OP = 1
+_PRINT_CRUD_OP = 0
 
 _DEBUG_READ_DATA = 0
 _DEBUG_CREATE_DATA = 0
-_DEBUG_UPDATE_DATA = 1
+_DEBUG_UPDATE_DATA = 0
 _DEBUG_DELETE_DATA = 0
 
 
@@ -184,9 +184,6 @@ def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntry
         return msg_return_list[5]
 
 
-
-    
-
 # @token
 def tokenizer(entryName, history):
     newLine = entryName
@@ -250,38 +247,6 @@ def rewriteLineInFile(newLine, entryName, dbName):
                     pass    # if newLine arg == None => line was deleted, do not write it
             else:
                 f.write(line)
-
-
-
-
-
-
-def editOrDeleteRecipeDate(ENTRIES, entryName, oldDate, newDate = None):
-    # (1) check whether desired newDate is valid
-    history = ENTRIES[entryName]
-    if oldDate not in history:
-        return 'Fatal error: trying to access an entry (date) non existent to this recipe'
-    if newDate != None and newDate in history:
-        return 'Error: the chosen date already appears in the records!'
-    history = deleteTargetDate(history, oldDate)
-    #sendNewOrEditedDataToDB(ENTRIES, entryName, newDate)
-    if newDate == None:
-        if _DEBUG_UPDATE_DATA: print('\nNEW:', entryName, '-', history)
-        return 'Entry deleted successfully!'
-    return 'Entry modified successfully!'
-def deleteTargetDate(history, targetDate):
-    for date in history:
-        if date == targetDate:
-            return [date for date in history if date != targetDate]
-    
-
-
-ENTRIES = READ_ENTRIES()
-name = 'food_multiple_entries_1'
-
-oldDate = {'d':1,'m':1,'y':2024}
-newDate = {'d':6,'m':9,'y':6969}
-print(UPDATE_ENTRY(ENTRIES, name, newEntryName='COIZZE'))
 
 
 # 4 big commands -> READ (an entry)
