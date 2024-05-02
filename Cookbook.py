@@ -8,11 +8,11 @@ _PRINT_CRUD_OP = 1
 
 _DEBUG_READ_DATA = 0
 _DEBUG_CREATE_DATA = 0
-_DEBUG_UPDATE_DATA = 0
-_DEBUG_DELETE_DATA = 1
+_DEBUG_UPDATE_DATA = 1
+_DEBUG_DELETE_DATA = 0
 
 
-### READ ENTRIES
+# ~ READ ENTRIES ~
 def READ_ENTRIES(dbName = DB_FILE_NAME):
 
     if _PRINT_CRUD_OP: print('\nREAD_ENTRIES call:')
@@ -27,7 +27,7 @@ def READ_ENTRIES(dbName = DB_FILE_NAME):
                 print(entryName, '-', ENTRIES[entryName], '\n')
         return ENTRIES
 
-### CREATE ENTRY (write)
+# ~ CREATE ENTRY ~
 def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
     msg_return_list = [
         ' > New entry added successfully!',
@@ -86,7 +86,7 @@ def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
         if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName], '\n', msg_return_list[3])
         return msg_return_list[3]
     
-### DELETE ENTRY
+# ~ DELETE ENTRY ~
 def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
     msg_return_list = [
         ' > Warning: Missing target date for deletion!',
@@ -130,13 +130,62 @@ def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
         else:
             return msg_return_list[3]
 
+# ~ UPDATE ENTRY HISTORY ~
+def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntryName = None, dbName = DB_FILE_NAME):
+    msg_return_list = [
+        ' > Error: Invalid target date for update!',
+        ' > Error: Invalid new date already existent!',
+        ' > Entry date updated successfull!!',
+        ' > Error: Invalid syntax - missing targetDate / newDate!',
+        ' > Entry name updated successfully!',
+        ' > Error: Invalid syntax!',
+    ]    
 
-### UPDATE ENTRY HISTORY
-def UPDATE_ENTRY():
-    # update entry date
+    if _PRINT_CRUD_OP: print('\nUPDATE ENTRY call:')
 
-    # update entry name
-    pass
+    # 1 - update entry date
+    if targetDate and newDate:
+        history = ENTRIES[entryName]
+
+        if targetDate not in history:
+            return msg_return_list[0]
+        elif newDate in history:
+            return msg_return_list[1]
+        
+        if _DEBUG_UPDATE_DATA: print('OLD:', entryName, '-', history)
+
+        DELETE_ENTRY(ENTRIES, entryName, targetDate)
+        CREATE_ENTRY(ENTRIES, entryName, newDate)
+
+        if _DEBUG_UPDATE_DATA: print('NEW:', entryName, '-', ENTRIES[entryName])
+        return msg_return_list[2]
+
+    # 2 - bad request
+    elif targetDate or newDate:
+        return msg_return_list[3]
+
+    # 3 - update entry name (no targetDate or newDate) 
+    elif newEntryName:
+        if newEntryName == entryName:
+            return
+        
+        if _DEBUG_UPDATE_DATA: print('NEW:', entryName, '-', ENTRIES[entryName])
+        
+        ENTRIES[newEntryName] = ENTRIES.pop(entryName)
+        if not _TEST_SIMULATION:
+            newLine = tokenizer(newEntryName, ENTRIES[newEntryName])
+            rewriteLineInFile(newLine, entryName, dbName)
+
+        if _DEBUG_UPDATE_DATA: print('OLD:', newEntryName, '-', ENTRIES[newEntryName])
+        return msg_return_list[4]
+
+    # 4 - bad request
+    else:
+        return msg_return_list[5]
+
+
+
+    
 
 # @token
 def tokenizer(entryName, history):
@@ -229,10 +278,10 @@ def deleteTargetDate(history, targetDate):
 
 ENTRIES = READ_ENTRIES()
 name = 'food_multiple_entries_1'
-#newDate = {'d':6,'m':9,'y':2021}
-#oldDate = {'d':2,'m':2,'y':2027}
+
 oldDate = {'d':1,'m':1,'y':2024}
-print(DELETE_ENTRY(ENTRIES, name))
+newDate = {'d':6,'m':9,'y':6969}
+print(UPDATE_ENTRY(ENTRIES, name, newEntryName='COIZZE'))
 
 
 # 4 big commands -> READ (an entry)
