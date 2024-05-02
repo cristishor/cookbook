@@ -2,38 +2,41 @@
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-_TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
+_TEST_SIMULATION = 1 # doesn't save the changes to the big DICT object to the DB
 
-_PRINT_READ_DATA = 0
-_PRINT_CREATE_DATA = 0
-_PRINT_UPDATE_DATA = 0
+_PRINT_CRUD_OP = 1
+
+_DEBUG_READ_DATA = 0
+_DEBUG_CREATE_DATA = 0
+_DEBUG_UPDATE_DATA = 0
+_DEBUG_DELETE_DATA = 1
 
 
 ### READ ENTRIES
 def READ_ENTRIES(dbName = DB_FILE_NAME):
 
-    if _PRINT_READ_DATA: print('\nREAD_ENTRIES call:')
+    if _PRINT_CRUD_OP: print('\nREAD_ENTRIES call:')
 
     with open(dbName, "r") as f:
         ENTRIES = {}
-        if _PRINT_READ_DATA: print()
+        if _DEBUG_READ_DATA: print()
         for line in f:
             entryName, history = detokenizer(line)
             ENTRIES[entryName] = history
-            if _PRINT_READ_DATA:
+            if _DEBUG_READ_DATA:
                 print(entryName, '-', ENTRIES[entryName], '\n')
         return ENTRIES
 
 ### CREATE ENTRY (write)
 def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
     msg_return_list = [
-        'New entry added successfully!',
-        'Warning: the chosen date already appears in the records!',
-        'New date entry added successfully!',
-        'Warning: date not provided to append to the existing recipe!'
+        ' > New entry added successfully!',
+        ' > Warning: the chosen date already appears in the records!',
+        ' > New date entry added successfully!',
+        ' > Warning: date not provided to append to the existing recipe!'
     ]
 
-    if _PRINT_CREATE_DATA: print('\nCREATE_ENTRY call:')
+    if _PRINT_CRUD_OP: print('\nCREATE_ENTRY call:')
     
     # 1 - NEW entry
     if entryName not in ENTRIES:
@@ -42,7 +45,7 @@ def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
             newLine = tokenizer(entryName, [newDate])
             addLineToFile(newLine, dbName)
 
-        if _PRINT_CREATE_DATA: print('New entry added:', entryName, '-', newDate, '\n', msg_return_list[0])
+        if _DEBUG_CREATE_DATA: print('New entry added:', entryName, '-', newDate, '\n', msg_return_list[0])
 
         return msg_return_list[0]
     
@@ -53,7 +56,7 @@ def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
         if newDate in currHistory:
             return msg_return_list[1]
         
-        if _PRINT_CREATE_DATA: print('OLD:', entryName, '-', currHistory)
+        if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', currHistory)
 
         lastItemFlag = 1
         for index, date in enumerate(currHistory):
@@ -74,21 +77,59 @@ def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
             newLine = tokenizer(entryName, currHistory)
             rewriteLineInFile(newLine, entryName, dbName)
 
-        if _PRINT_CREATE_DATA: print('NEW:', entryName, '-', currHistory, '\n', msg_return_list[2])
+        if _DEBUG_CREATE_DATA: print('NEW:', entryName, '-', currHistory, '\n', msg_return_list[2])
 
         return msg_return_list[2]
     
     # 3 - OLD entry, NULL date
     else:
-        if _PRINT_CREATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName], '\n', msg_return_list[3])
+        if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName], '\n', msg_return_list[3])
         return msg_return_list[3]
     
 ### DELETE ENTRY
-def DELETE_ENTRY():
-    # delete entry date
+def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
+    msg_return_list = [
+        ' > Warning: Missing target date for deletion!',
+        ' > Date deletion successfull!',
+        ' > Entry deleted successfull!',
+        ' > Error: Missing target entry for deletion!'
+    ]    
+    
+    if _PRINT_CRUD_OP: print('\nDELETE ENTRY call:')
 
-    # delete entry completely 
-    pass
+    # 1 - delete entry date
+    if targetDate:
+        history = ENTRIES[entryName]
+
+        if _DEBUG_DELETE_DATA: print('OLD:', entryName, '-', history)
+
+        if targetDate in history:
+            history.pop(history.index(targetDate))
+
+            if _DEBUG_DELETE_DATA: print('NEW:', entryName, '-', history)
+
+            if not _TEST_SIMULATION:
+                newLine = tokenizer(entryName, history)
+                rewriteLineInFile(newLine, entryName, dbName)
+        else:
+            return msg_return_list[0]
+        return msg_return_list[1]
+
+    # 2 - delete entry completely 
+    else:
+        if entryName in ENTRIES:
+            ENTRIES.pop(entryName)
+            if not _TEST_SIMULATION:
+                rewriteLineInFile(None, entryName, dbName)
+
+            if _DEBUG_DELETE_DATA:
+                for obj in ENTRIES:
+                    print(obj)
+
+            return msg_return_list[2]
+        else:
+            return msg_return_list[3]
+
 
 ### UPDATE ENTRY HISTORY
 def UPDATE_ENTRY():
@@ -154,7 +195,10 @@ def rewriteLineInFile(newLine, entryName, dbName):
     with open(dbName, 'w') as f:
         for line in lines:
             if entryName in line:
-                f.write(newLine + '\n')
+                if newLine != None:
+                    f.write(newLine + '\n')
+                else:
+                    pass    # if newLine arg == None => line was deleted, do not write it
             else:
                 f.write(line)
 
@@ -173,7 +217,7 @@ def editOrDeleteRecipeDate(ENTRIES, entryName, oldDate, newDate = None):
     history = deleteTargetDate(history, oldDate)
     #sendNewOrEditedDataToDB(ENTRIES, entryName, newDate)
     if newDate == None:
-        if _PRINT_UPDATE_DATA: print('\nNEW:', entryName, '-', history)
+        if _DEBUG_UPDATE_DATA: print('\nNEW:', entryName, '-', history)
         return 'Entry deleted successfully!'
     return 'Entry modified successfully!'
 def deleteTargetDate(history, targetDate):
@@ -187,8 +231,8 @@ ENTRIES = READ_ENTRIES()
 name = 'food_multiple_entries_1'
 #newDate = {'d':6,'m':9,'y':2021}
 #oldDate = {'d':2,'m':2,'y':2027}
-oldDate = {'d':2,'m':2,'y':2023}
-# print(editOrDeleteRecipeDate(ENTRIES, name, oldDate))
+oldDate = {'d':1,'m':1,'y':2024}
+print(DELETE_ENTRY(ENTRIES, name))
 
 
 # 4 big commands -> READ (an entry)
