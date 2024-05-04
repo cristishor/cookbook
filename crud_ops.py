@@ -1,13 +1,16 @@
+from utils import VALIDATE_DATE_DICT_TYPE, VALIDATE_W_TYPE
+
+DEFAULT_W = 10
 # ENVIRONMENT GLOBAL VARIABLES
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
 _TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
 
-_PRINT_CRUD_OP = 0
+_PRINT_CRUD_OP = 1
 
 _DEBUG_READ_DATA = 1
-_DEBUG_CREATE_DATA = 0
+_DEBUG_CREATE_DATA = 1
 _DEBUG_UPDATE_DATA = 0
 _DEBUG_DELETE_DATA = 0
 
@@ -37,64 +40,80 @@ def READ_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
     return entryData
 
 # ~ CREATE ENTRY ~
-def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
+def CREATE_ENTRY(ENTRIES, entryName, entryData = None, dbName = DB_FILE_NAME):
     msg_return_list = [
         ' > New entry added successfully!',
-        ' > Warning: the chosen date already appears in the records!',
-        ' > New date entry added successfully!',
-        ' > Warning: date not provided to append to the existing recipe!'
+        ' > Error: the entry name already appears in the records!'
     ]
 
     if _PRINT_CRUD_OP: print('\nCREATE_ENTRY call:')
-    
-    # 1 - NEW entry
+
     if entryName not in ENTRIES:
-        ENTRIES[entryName] = newDate
+        ENTRIES[entryName] = entryData
         if not _TEST_SIMULATION:
-            newLine = tokenizer(entryName, [newDate])
+            newLine = tokenizer(entryName, entryData)
             addLineToFile(newLine, dbName)
 
-        if _DEBUG_CREATE_DATA: print('New entry added:', entryName, '-', newDate, '\n', msg_return_list[0])
+        if _DEBUG_CREATE_DATA: print('New entry added:\n', newLine)
+        return msg_return_list[0]
+    else:
+        if _DEBUG_CREATE_DATA: print(msg_return_list[1])
+        return msg_return_list[1]
+    
+# ~ CREATE ADD DATE ~
+def CREATE_ADD_DATE(ENTRIES, entryName, date, dbName = DB_FILE_NAME):
+    msg_return_list = [
+        ' > Error: date already existing in history!',
+        ' > New date entry added successfully!'
+    ]
 
+    if _PRINT_CRUD_OP: print('\nCREATE_ADD_DATE call:')
+
+    VALIDATE_DATE_DICT_TYPE(date)
+
+    history = ENTRIES[entryName]['history']
+
+    if date in history:
         return msg_return_list[0]
     
-    # 2 - OLD entry, NEW date
-    elif newDate is not None:
-        currHistory = ENTRIES[entryName]
+    if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', history)
 
-        if newDate in currHistory:
-            return msg_return_list[1]
-        
-        if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', currHistory)
+    lastItemFlag = 1
+    for index, _date in enumerate(history):
+        # TO DO: rethink the logic from here -> looks gnarly
+        if _date['y'] > date['y']:
+            continue
+        if _date['m'] > date['m'] and _date['y'] == date['y']:
+            continue
+        if _date['d'] > date['d'] and _date['m'] == date['m'] and _date['y'] == date['y']:
+            continue
+        history.insert(index, date)
+        lastItemFlag = 0
+        break
+    if lastItemFlag:
+        history.append(date)
 
-        lastItemFlag = 1
-        for index, date in enumerate(currHistory):
-            # TO DO: rethink the logic from here -> looks gnarly
-            if date['y'] > newDate['y']:
-                continue
-            if date['m'] > newDate['m'] and date['y'] == newDate['y']:
-                continue
-            if date['d'] > newDate['d'] and date['m'] == newDate['m'] and date['y'] == newDate['y']:
-                continue
-            currHistory.insert(index, newDate)
-            lastItemFlag = 0
-            break
-        if lastItemFlag:
-            currHistory.append(newDate)
+    if not _TEST_SIMULATION: 
+        newLine = tokenizer(entryName, ENTRIES[entryName])
+        rewriteLineInFile(newLine, entryName, dbName)
 
-        if not _TEST_SIMULATION: 
-            newLine = tokenizer(entryName, currHistory)
-            rewriteLineInFile(newLine, entryName, dbName)
-
-        if _DEBUG_CREATE_DATA: print('NEW:', entryName, '-', currHistory, '\n', msg_return_list[2])
-
-        return msg_return_list[2]
+    if _DEBUG_CREATE_DATA: print('NEW:', entryName, '-', history)    
+    return msg_return_list[1]
     
-    # 3 - OLD entry, NULL date
+# ~ SET WEIGHT ~
+def SET_W(ENTRIES, entryName, weight = None, dbName = DB_FILE_NAME):
+
+    if weight == None:
+    # return to default
+        ENTRIES[entryName]['weight'] = DEFAULT_W
     else:
-        if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName], '\n', msg_return_list[3])
-        return msg_return_list[3]
-    
+        VALIDATE_W_TYPE(weight)
+        ENTRIES[entryName]['weight'] = weight
+
+    if not _TEST_SIMULATION: 
+        newLine = tokenizer(entryName, ENTRIES[entryName])
+        rewriteLineInFile(newLine, entryName, dbName)
+
 # ~ DELETE ENTRY ~
 def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
     msg_return_list = [
@@ -194,14 +213,19 @@ def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntry
 
 
 # @token
-def tokenizer(entryName, history):
+def tokenizer(entryName, entryData):
+    history = entryData['history']
+    weight  = entryData['weight']
+    
     newLine = entryName
-    if history == None:
-        newLine = newLine + '{}'
-    else:
+    if history != None:
+        newLine += ':history'
         for date in history:
-            newLine = newLine +'{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
-        return newLine
+            newLine += '{' + str(date['d']) + '/' + str(date['m']) + '/' + str(date['y']) + '}'
+    if weight != None and weight != DEFAULT_W:
+        newLine += ':weight{' + str(weight) + '}'
+
+    return newLine
     
 def detokenizer(line):
     def main(line):
@@ -225,15 +249,15 @@ def detokenizer(line):
         for token in tokens:
             if token.count('history'):
                 fields['history'] = get_history(token[len('history'):])
+
             if token.count('weight'):
                 fields['weight'] = get_weight(token[len('weight'):])
+            else:
+                fields['weight'] = DEFAULT_W
 
         return entryName, fields
 
     def get_history(string):
-        if(line.find('{}') != -1):
-            return None
-        
         history = []
         nloop = string.count('}')
         for i in range(nloop): 
@@ -252,7 +276,8 @@ def detokenizer(line):
         return history
 
     def get_weight(string):
-        pass
+        weight = int(string[1:string.find('}')])
+        return weight
 
     return main(line)
 
@@ -300,7 +325,10 @@ def rewriteLineInFile(newLine, entryName, dbName):
                 f.write(line)
 
 ENTRIES = READ_ENTRIES()
-print(READ_ENTRY(ENTRIES, 'no_entry_food'))
+entryData = {'history':[{'d':10,'m':10,'y':2002}],'weight':69}
+SET_W(ENTRIES, 'no_entry_food')
+#print(CREATE_ADD_DATE(ENTRIES, 'food_multiple_entries_1', {'d':1,'m':1,'y':2025}))
+#print(READ_ENTRY(ENTRIES, 'no_entry_food'))
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one
 #       (!) A very special task: create myself a calendar module
