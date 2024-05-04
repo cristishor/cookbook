@@ -5,12 +5,12 @@ DEFAULT_W = 10
 DB_FILE_NAME = 'test001.db'
 
 # GLOBAL DEBUG FLAGS
-_TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
+_STORE_CHANGES_TO_DB = 1 # doesn't save the changes to the big DICT object to the DB
 
 _PRINT_CRUD_OP = 1
 
-_DEBUG_READ_DATA = 1
-_DEBUG_CREATE_DATA = 1
+_DEBUG_READ_DATA = 0
+_DEBUG_CREATE_DATA = 0
 _DEBUG_UPDATE_DATA = 0
 _DEBUG_DELETE_DATA = 0
 
@@ -50,7 +50,7 @@ def CREATE_ENTRY(ENTRIES, entryName, entryData = None, dbName = DB_FILE_NAME):
 
     if entryName not in ENTRIES:
         ENTRIES[entryName] = entryData
-        if not _TEST_SIMULATION:
+        if _STORE_CHANGES_TO_DB:
             newLine = tokenizer(entryName, entryData)
             addLineToFile(newLine, dbName)
 
@@ -63,9 +63,13 @@ def CREATE_ENTRY(ENTRIES, entryName, entryData = None, dbName = DB_FILE_NAME):
 # ~ CREATE ADD DATE ~
 def CREATE_ADD_DATE(ENTRIES, entryName, date, dbName = DB_FILE_NAME):
     msg_return_list = [
+        ' > Error: bad entry name!',
         ' > Error: date already existing in history!',
         ' > New date entry added successfully!'
     ]
+
+    if entryName not in ENTRIES:
+        return msg_return_list[0]
 
     if _PRINT_CRUD_OP: print('\nCREATE_ADD_DATE call:')
 
@@ -74,7 +78,7 @@ def CREATE_ADD_DATE(ENTRIES, entryName, date, dbName = DB_FILE_NAME):
     history = ENTRIES[entryName]['history']
 
     if date in history:
-        return msg_return_list[0]
+        return msg_return_list[1]
     
     if _DEBUG_CREATE_DATA: print('OLD:', entryName, '-', history)
 
@@ -93,53 +97,45 @@ def CREATE_ADD_DATE(ENTRIES, entryName, date, dbName = DB_FILE_NAME):
     if lastItemFlag:
         history.append(date)
 
-    if not _TEST_SIMULATION: 
+    if _STORE_CHANGES_TO_DB: 
         newLine = tokenizer(entryName, ENTRIES[entryName])
         rewriteLineInFile(newLine, entryName, dbName)
 
     if _DEBUG_CREATE_DATA: print('NEW:', entryName, '-', history)    
-    return msg_return_list[1]
-    
-# ~ SET WEIGHT ~
-def SET_W(ENTRIES, entryName, weight = None, dbName = DB_FILE_NAME):
-
-    if _PRINT_CRUD_OP: print('\SET_W call:')
-
-    if weight == None:
-    # return to default
-        ENTRIES[entryName]['weight'] = DEFAULT_W
-    else:
-        VALIDATE_W_TYPE(weight)
-        ENTRIES[entryName]['weight'] = weight
-
-    if not _TEST_SIMULATION: 
-        newLine = tokenizer(entryName, ENTRIES[entryName])
-        rewriteLineInFile(newLine, entryName, dbName)
+    return msg_return_list[2]
 
 # ~ DELETE ENTRY ~
 def DELETE_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
     msg_return_list = [
+        ' > Error: bad entry name!',
         ' > Error: Missing target entry for deletion!',
         ' > Entry deleted successfull!'
     ]    
     
-    if _PRINT_CRUD_OP: print('\nDELETE_ENTRY call:')
-
     if entryName not in ENTRIES:
         return msg_return_list[0]
 
+    if _PRINT_CRUD_OP: print('\nDELETE_ENTRY call:')
+
+    if entryName not in ENTRIES:
+        return msg_return_list[1]
+
     ENTRIES.pop(entryName)
-    if not _TEST_SIMULATION:
+    if _STORE_CHANGES_TO_DB:
         rewriteLineInFile(None, entryName, dbName)
 
-    return msg_return_list[1]
+    return msg_return_list[2]
     
 # ~ DELETE ENTRY DATE ~
 def DELETE_DATE(ENTRIES, entryName, targetDate, dbName = DB_FILE_NAME):
     msg_return_list = [
+        ' > Error: bad entry name!',
         ' > Error: Target date missing for deletion!',
         ' > Date deletion successfull!'
     ] 
+
+    if entryName not in ENTRIES:
+        return msg_return_list[0]
 
     if _PRINT_CRUD_OP: print('\nDELET_DATE call:')
 
@@ -152,66 +148,99 @@ def DELETE_DATE(ENTRIES, entryName, targetDate, dbName = DB_FILE_NAME):
         history.pop(history.index(targetDate))
         if _DEBUG_DELETE_DATA: print('NEW:', entryName, '-', history)
 
-        if not _TEST_SIMULATION:
+        if _STORE_CHANGES_TO_DB:
             newLine = tokenizer(entryName, ENTRIES[entryName])
             rewriteLineInFile(newLine, entryName, dbName)
     else:
-        return msg_return_list[0]
-    return msg_return_list[1]
+        return msg_return_list[1]
+    return msg_return_list[2]
         
 # ~ UPDATE ENTRY HISTORY ~
-def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntryName = None, dbName = DB_FILE_NAME):
+def UPDATE_ENTRY(ENTRIES, entryName, targetFields, dbName = DB_FILE_NAME):
     msg_return_list = [
-        ' > Error: Invalid target date for update!',
-        ' > Error: Invalid new date already existent!',
-        ' > Entry date updated successfull!!',
-        ' > Error: Invalid syntax - missing targetDate / newDate!',
+        ' > Error: bad entry name!',
+        ' > Error: entry name already existing!',
         ' > Entry name updated successfully!',
-        ' > Error: Invalid syntax!',
+        ' > Error: missing target date to be updated!',
+        ' > Error: already existing/missing new date to update old!',
+        ' > Date updated successfully!',
+        ' > Weight updated successfully!',
+        ' > Error: unknown field to be updated!'
     ]    
 
+    if entryName not in ENTRIES:
+        return msg_return_list[0]
+    
     if _PRINT_CRUD_OP: print('\nUPDATE ENTRY call:')
 
-    # 1 - update entry date
-    if targetDate and newDate:
-        history = ENTRIES[entryName]
+    global _STORE_CHANGES_TO_DB
+    return_msgs = []
+    fieldsKeys = targetFields.keys()
 
-        if targetDate not in history:
-            return msg_return_list[0]
-        elif newDate in history:
-            return msg_return_list[1]
+    if _DEBUG_UPDATE_DATA: print('OLD:', entryName, '-', ENTRIES[entryName])
+
+    for key in fieldsKeys:
+        if key == 'entryName':
+            newEntryName = targetFields[key]
+
+            if newEntryName in ENTRIES:
+                return msg_return_list[1]
+                    
+            ENTRIES[newEntryName] = ENTRIES.pop(entryName)
+
+            if _STORE_CHANGES_TO_DB:
+                newLine = tokenizer(newEntryName, ENTRIES[newEntryName])
+                rewriteLineInFile(newLine, entryName, dbName)
+
+            entryName = newEntryName
+
+            return_msgs.append(msg_return_list[2])
         
-        if _DEBUG_UPDATE_DATA: print('OLD:', entryName, '-', history)
+        elif key == 'history':
+            history = ENTRIES[entryName]['history']
+            targetDate = targetFields[key]['targetDate']
+            newDate    = targetFields[key]['newDate']
 
-        DELETE_ENTRY(ENTRIES, entryName, targetDate)
-        CREATE_ENTRY(ENTRIES, entryName, newDate)
+            if targetDate not in history:
+                return msg_return_list[3]
+            if newDate in history:
+                return msg_return_list[4]
 
-        if _DEBUG_UPDATE_DATA: print('NEW:', entryName, '-', ENTRIES[entryName])
-        return msg_return_list[2]
+            VALIDATE_DATE_DICT_TYPE(newDate)
 
-    # 2 - bad request
-    elif targetDate or newDate:
-        return msg_return_list[3]
+            _STORE_CHANGES_TO_DB = 0
+            DELETE_DATE(ENTRIES, entryName, targetDate)
+            CREATE_ADD_DATE(ENTRIES, entryName, newDate)
+            _STORE_CHANGES_TO_DB = 1
 
-    # 3 - update entry name (no targetDate or newDate) 
-    elif newEntryName:
-        if newEntryName == entryName:
-            return
+            return_msgs.append(msg_return_list[5])
+
+        elif key == 'weight':
+            weight = targetFields[key]
+
+            if weight == ENTRIES[entryName]['weight']:
+                continue
+
+            if weight == None:
+            # return to default
+                ENTRIES[entryName]['weight'] = DEFAULT_W
+            else:
+                VALIDATE_W_TYPE(weight)
+                ENTRIES[entryName]['weight'] = weight
+
+            return_msgs.append(msg_return_list[6])
+
+        else:
+            return msg_return_list[7]
         
-        if _DEBUG_UPDATE_DATA: print('NEW:', entryName, '-', ENTRIES[entryName])
+    if _DEBUG_UPDATE_DATA: print('NEW:', entryName, '-', ENTRIES[entryName])
+    
+    if _STORE_CHANGES_TO_DB:
+        newLine = tokenizer(entryName, ENTRIES[entryName])
+        rewriteLineInFile(newLine, entryName, dbName)
+    
+    return return_msgs
         
-        ENTRIES[newEntryName] = ENTRIES.pop(entryName)
-        if not _TEST_SIMULATION:
-            newLine = tokenizer(newEntryName, ENTRIES[newEntryName])
-            rewriteLineInFile(newLine, entryName, dbName)
-
-        if _DEBUG_UPDATE_DATA: print('OLD:', newEntryName, '-', ENTRIES[newEntryName])
-        return msg_return_list[4]
-
-    # 4 - bad request
-    else:
-        return msg_return_list[5]
-
 
 # @token
 def tokenizer(entryName, entryData):
@@ -327,6 +356,16 @@ def rewriteLineInFile(newLine, entryName, dbName):
 
 ENTRIES = READ_ENTRIES()
 entryData = {'history':[{'d':10,'m':10,'y':2002}],'weight':69}
+msgs = UPDATE_ENTRY(ENTRIES, 'food_multiple_entries_1', {
+    'entryName':'shid',
+    'history':{'targetDate':{'d':1,'m':1,'y':2024}, 'newDate':{'d':1,'m':1,'y':3333}},
+    'weight':11
+    })
+if isinstance(msgs, str):
+    print(msgs)
+else:
+    for msg in msgs:
+        print(msg)
 
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one

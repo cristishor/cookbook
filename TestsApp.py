@@ -6,7 +6,7 @@ TEST_DB_1 = 'test001.db'
 def test_READ(doTest = 0):
     if doTest:
         # Init flags / variables
-        crud_ops._TEST_SIMULATION = 1
+        crud_ops._STORE_CHANGES_TO_DB = 0
         crud_ops._PRINT_CRUD_OP = 1
         crud_ops._DEBUG_READ_DATA = 1
 
@@ -14,14 +14,14 @@ def test_READ(doTest = 0):
         crud_ops.READ_ENTRIES(TEST_DB_1)
 
         # Deinit flags / variables
-        crud_ops._TEST_SIMULATION = 0
+        crud_ops._STORE_CHANGES_TO_DB = 1
         crud_ops._PRINT_CRUD_OP = 0
         crud_ops._DEBUG_READ_DATA = 0
 
 def test_CREATE(doTest = 0):
     if doTest:
         # Init flags / variables
-        crud_ops._TEST_SIMULATION = 1
+        crud_ops._STORE_CHANGES_TO_DB = 0
         crud_ops._PRINT_CRUD_OP = 1
         crud_ops._DEBUG_CREATE_DATA = 1
 
@@ -42,14 +42,14 @@ def test_CREATE(doTest = 0):
             print(msg)
 
         # Deinit flags / variables
-        crud_ops._TEST_SIMULATION = 0
+        crud_ops._STORE_CHANGES_TO_DB = 1
         crud_ops._PRINT_CRUD_OP = 0
         crud_ops._DEBUG_CREATE_DATA = 0
                 
 def test_DELETE(doTest = 0):
     if doTest:
         # Init flags / variables
-        crud_ops._TEST_SIMULATION = 1
+        crud_ops._STORE_CHANGES_TO_DB = 0
         crud_ops._PRINT_CRUD_OP = 1
         crud_ops._DEBUG_DELETE_DATA = 1
 
@@ -57,7 +57,7 @@ def test_DELETE(doTest = 0):
 
 
         # Deinit flags / variables
-        crud_ops._TEST_SIMULATION = 0
+        crud_ops._STORE_CHANGES_TO_DB = 1
         crud_ops._PRINT_CRUD_OP = 0
         crud_ops._DEBUG_DELETE_DATA = 0
 
