@@ -103,6 +103,8 @@ def CREATE_ADD_DATE(ENTRIES, entryName, date, dbName = DB_FILE_NAME):
 # ~ SET WEIGHT ~
 def SET_W(ENTRIES, entryName, weight = None, dbName = DB_FILE_NAME):
 
+    if _PRINT_CRUD_OP: print('\SET_W call:')
+
     if weight == None:
     # return to default
         ENTRIES[entryName]['weight'] = DEFAULT_W
@@ -115,17 +117,30 @@ def SET_W(ENTRIES, entryName, weight = None, dbName = DB_FILE_NAME):
         rewriteLineInFile(newLine, entryName, dbName)
 
 # ~ DELETE ENTRY ~
-def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
+def DELETE_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
     msg_return_list = [
-        ' > Warning: Missing target date for deletion!',
-        ' > Date deletion successfull!',
-        ' > Entry deleted successfull!',
-        ' > Error: Missing target entry for deletion!'
+        ' > Error: Missing target entry for deletion!',
+        ' > Entry deleted successfull!'
     ]    
     
     if _PRINT_CRUD_OP: print('\nDELETE ENTRY call:')
 
-    # 1 - delete entry date
+    if entryName not in ENTRIES:
+        return msg_return_list[0]
+
+    ENTRIES.pop(entryName)
+    if not _TEST_SIMULATION:
+        rewriteLineInFile(None, entryName, dbName)
+
+    return msg_return_list[1]
+    
+# ~ DELETE ENTRY DATE ~
+def DELETE_DATE():
+    msg_return_list = [
+        ' > Warning: Missing target date for deletion!',
+        ' > Date deletion successfull!'
+    ] 
+
     if targetDate:
         history = ENTRIES[entryName]
 
@@ -142,22 +157,7 @@ def DELETE_ENTRY(ENTRIES, entryName, targetDate = None, dbName = DB_FILE_NAME):
         else:
             return msg_return_list[0]
         return msg_return_list[1]
-
-    # 2 - delete entry completely 
-    else:
-        if entryName in ENTRIES:
-            ENTRIES.pop(entryName)
-            if not _TEST_SIMULATION:
-                rewriteLineInFile(None, entryName, dbName)
-
-            if _DEBUG_DELETE_DATA:
-                for obj in ENTRIES:
-                    print(obj)
-
-            return msg_return_list[2]
-        else:
-            return msg_return_list[3]
-
+        
 # ~ UPDATE ENTRY HISTORY ~
 def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntryName = None, dbName = DB_FILE_NAME):
     msg_return_list = [
@@ -326,9 +326,7 @@ def rewriteLineInFile(newLine, entryName, dbName):
 
 ENTRIES = READ_ENTRIES()
 entryData = {'history':[{'d':10,'m':10,'y':2002}],'weight':69}
-SET_W(ENTRIES, 'no_entry_food')
-#print(CREATE_ADD_DATE(ENTRIES, 'food_multiple_entries_1', {'d':1,'m':1,'y':2025}))
-#print(READ_ENTRY(ENTRIES, 'no_entry_food'))
+
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one
 #       (!) A very special task: create myself a calendar module
