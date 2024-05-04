@@ -123,7 +123,7 @@ def DELETE_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
         ' > Entry deleted successfull!'
     ]    
     
-    if _PRINT_CRUD_OP: print('\nDELETE ENTRY call:')
+    if _PRINT_CRUD_OP: print('\nDELETE_ENTRY call:')
 
     if entryName not in ENTRIES:
         return msg_return_list[0]
@@ -135,28 +135,29 @@ def DELETE_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
     return msg_return_list[1]
     
 # ~ DELETE ENTRY DATE ~
-def DELETE_DATE():
+def DELETE_DATE(ENTRIES, entryName, targetDate, dbName = DB_FILE_NAME):
     msg_return_list = [
-        ' > Warning: Missing target date for deletion!',
+        ' > Error: Target date missing for deletion!',
         ' > Date deletion successfull!'
     ] 
 
-    if targetDate:
-        history = ENTRIES[entryName]
+    if _PRINT_CRUD_OP: print('\nDELET_DATE call:')
 
+    VALIDATE_DATE_DICT_TYPE(targetDate)
+
+    history = ENTRIES[entryName]['history']
+
+    if targetDate in history:
         if _DEBUG_DELETE_DATA: print('OLD:', entryName, '-', history)
+        history.pop(history.index(targetDate))
+        if _DEBUG_DELETE_DATA: print('NEW:', entryName, '-', history)
 
-        if targetDate in history:
-            history.pop(history.index(targetDate))
-
-            if _DEBUG_DELETE_DATA: print('NEW:', entryName, '-', history)
-
-            if not _TEST_SIMULATION:
-                newLine = tokenizer(entryName, history)
-                rewriteLineInFile(newLine, entryName, dbName)
-        else:
-            return msg_return_list[0]
-        return msg_return_list[1]
+        if not _TEST_SIMULATION:
+            newLine = tokenizer(entryName, ENTRIES[entryName])
+            rewriteLineInFile(newLine, entryName, dbName)
+    else:
+        return msg_return_list[0]
+    return msg_return_list[1]
         
 # ~ UPDATE ENTRY HISTORY ~
 def UPDATE_ENTRY(ENTRIES, entryName, targetDate = None, newDate = None, newEntryName = None, dbName = DB_FILE_NAME):
