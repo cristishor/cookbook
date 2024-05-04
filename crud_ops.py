@@ -6,7 +6,7 @@ _TEST_SIMULATION = 0 # doesn't save the changes to the big DICT object to the DB
 
 _PRINT_CRUD_OP = 0
 
-_DEBUG_READ_DATA = 0
+_DEBUG_READ_DATA = 1
 _DEBUG_CREATE_DATA = 0
 _DEBUG_UPDATE_DATA = 0
 _DEBUG_DELETE_DATA = 0
@@ -21,8 +21,8 @@ def READ_ENTRIES(dbName = DB_FILE_NAME):
         ENTRIES = {}
         if _DEBUG_READ_DATA: print()
         for line in f:
-            entryName, history = detokenizer(line)
-            ENTRIES[entryName] = history
+            entryName, fields = detokenizer(line)
+            parse(entryName, fields, ENTRIES)
             if _DEBUG_READ_DATA:
                 print(entryName, '-', ENTRIES[entryName], '\n')
         return ENTRIES
@@ -202,33 +202,66 @@ def tokenizer(entryName, history):
         return newLine
     
 def detokenizer(line):
-    name_index = line.find('{')
-    entryName = line[:name_index]
+    def main(line):
+        name_index = line.find(':')
+        entryName = line[:name_index]
 
-    # if the entry has no date recorded, return the object w/ name and index
-    if(line.find('{}') != -1):
-        return entryName, None
+        line = line[name_index+1:]
 
-    date_index = 0
-    history = []
-    while True:
-        next_date_index = line.find('{', date_index)
+        # break all fields into separate tokens
+        tokens = []
+        for i in range(line.count(':')):
+            index = line.find(':')
+            tokens.append(line[:index])
+            line = line[index+1:]
+        if(line != '' and line != '\n'): 
+            # can happen if our line ends with a ':' character
+            tokens.append(line)
 
-        if next_date_index == -1: 
-            break
+        # SWITCH STATEMENT : for every variable in the db
+        fields = {}
+        for token in tokens:
+            if token.count('history'):
+                fields['history'] = get_history(token[len('history'):])
+            if token.count('weight'):
+                fields['weight'] = get_weight(token[len('weight'):])
+
+        return entryName, fields
+
+    def get_history(string):
+        if(line.find('{}') != -1):
+            return None
         
-        closing_bracket_index = line.find('}', next_date_index)
-        date = line[next_date_index+1:closing_bracket_index]
-        s1 = date.find('/')
-        s2 = date.find('/', s1+1)
-        d = int(date[:s1])
-        m = int(date[s1+1:s2])
-        y = int(date[s2+1:])
+        history = []
+        nloop = string.count('}')
+        for i in range(nloop): 
+            start = string.find('{') + 1
+            end = string.find('}')
+            substring = string[start:end]
+            string = string[end+1:]
 
-        history.append({'d':d,'m':m,'y':y})
+            s1 = substring.find('/')
+            s2 = substring.find('/', s1+1)
+            d = int(substring[:s1])
+            m = int(substring[s1+1:s2])
+            y = int(substring[s2+1:])
 
-        date_index = next_date_index + 1
-    return entryName, history
+            history.append({'d':d,'m':m,'y':y})
+        return history
+
+    def get_weight(string):
+        pass
+
+    return main(line)
+
+def parse(key, fields, dict_structure):
+    entryData = {}
+
+    for _key in fields.keys():
+        entryData[_key] = fields[_key]
+    
+    dict_structure[key] = entryData
+
 
 # @file
 def addLineToFile(line, dbName):
@@ -255,7 +288,7 @@ def rewriteLineInFile(newLine, entryName, dbName):
             else:
                 f.write(line)
 
-
+RECIPES = READ_ENTRIES()
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one
 #       (!) A very special task: create myself a calendar module

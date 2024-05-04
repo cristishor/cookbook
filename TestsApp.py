@@ -11,7 +11,7 @@ def test_READ(doTest = 0):
         crud_ops._DEBUG_READ_DATA = 1
 
         # Call processes
-        crud_ops.fetchDataFromDB(TEST_DB_1)
+        crud_ops.READ_ENTRIES(TEST_DB_1)
 
         # Deinit flags / variables
         crud_ops._TEST_SIMULATION = 0
@@ -36,7 +36,7 @@ def test_CREATE(doTest = 0):
 
         # Call processes
         print('\n##### START TEST ######')
-        ALL_RECIPES = crud_ops.fetchDataFromDB(TEST_DB_1)
+        ALL_RECIPES = crud_ops.CREATE_ENTRY(TEST_DB_1)
         for i in range(0, len(food_date), 2):
             msg = crud_ops.sendNewOrEditedDataToDB(ALL_RECIPES, food_date[i], food_date[i+1])
             print(msg)

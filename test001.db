@@ -1,8 +1,8 @@
-food_name1{23/4/2024}
-food_name2{23/4/2024}
-food_name3{23/4/2024}
-no_entry_food{}
-already_existing_food{1/1/2024}
-food_multiple_entries_1{1/1/2024}{2/2/2023}{1/1/2023}{1/1/2022}
-food_multiple_entries_2{1/1/2024}{1/9/2023}{25/1/2023}
-food_multiple_entries_3{20/10/2023}{10/9/2023}{5/9/2023}{25/5/2023}
+food_name1:history{23/4/2024}
+food_name2:history{23/4/2024}
+food_name3:history{23/4/2024}
+no_entry_food:history{}
+already_existing_food:history{1/1/2024}
+food_multiple_entries_1:history{1/1/2024}{2/2/2023}{1/1/2023}{1/1/2022}:
+food_multiple_entries_2:history{1/1/2024}{1/9/2023}{25/1/2023}:
+food_multiple_entries_3:history{20/10/2023}{10/9/2023}{5/9/2023}{25/5/2023}:
