@@ -21,14 +21,6 @@ def IS_INT(_var: int):
         raise TypeError("Value must be an integer")
 
 
-
-def validate_DATE_IN_CALENDAR(_date):
-    _d = _date['d']
-    _m = _date['m']
-    _y = _date['y']
-
-    pass
-
 __all__ = [
     'VALIDATE_DATE_DICT_TYPE',
     'VALIDATE_W_TYPE']

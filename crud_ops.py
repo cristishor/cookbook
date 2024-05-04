@@ -1,11 +1,11 @@
 from utils import VALIDATE_DATE_DICT_TYPE, VALIDATE_W_TYPE
 
-DEFAULT_W = 10
-# ENVIRONMENT GLOBAL VARIABLES
+# ENVIRONMENT CRUD/GLOBAL VARIABLES
 DB_FILE_NAME = 'test001.db'
+DEFAULT_W = 10
 
-# GLOBAL DEBUG FLAGS
-_STORE_CHANGES_TO_DB = 1 # doesn't save the changes to the big DICT object to the DB
+# CRUD_OPDS DEBUG FLAGS
+_STORE_CHANGES_TO_DB = 1 # save create/update/delete ops to db
 
 _PRINT_CRUD_OP = 1
 
@@ -155,7 +155,7 @@ def DELETE_DATE(ENTRIES, entryName, targetDate, dbName = DB_FILE_NAME):
         return msg_return_list[1]
     return msg_return_list[2]
         
-# ~ UPDATE ENTRY HISTORY ~
+# ~ UPDATE ENTRY targetFields ~
 def UPDATE_ENTRY(ENTRIES, entryName, targetFields, dbName = DB_FILE_NAME):
     msg_return_list = [
         ' > Error: bad entry name!',
@@ -354,18 +354,6 @@ def rewriteLineInFile(newLine, entryName, dbName):
             else:
                 f.write(line)
 
-ENTRIES = READ_ENTRIES()
-entryData = {'history':[{'d':10,'m':10,'y':2002}],'weight':69}
-msgs = UPDATE_ENTRY(ENTRIES, 'food_multiple_entries_1', {
-    'entryName':'shid',
-    'history':{'targetDate':{'d':1,'m':1,'y':2024}, 'newDate':{'d':1,'m':1,'y':3333}},
-    'weight':11
-    })
-if isinstance(msgs, str):
-    print(msgs)
-else:
-    for msg in msgs:
-        print(msg)
 
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one
