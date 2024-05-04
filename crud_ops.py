@@ -23,16 +23,18 @@ def READ_ENTRIES(dbName = DB_FILE_NAME):
         for line in f:
             entryName, fields = detokenizer(line)
             parse(entryName, fields, ENTRIES)
+
             if _DEBUG_READ_DATA:
-                print(entryName, '-', ENTRIES[entryName], '\n')
+                print(entryName, '- history:', ENTRIES[entryName]['history'], '- w:', ENTRIES[entryName]['weight'])
+
         return ENTRIES
 
 # ~ READ ENTRY ~
 def READ_ENTRY(ENTRIES, entryName, dbName = DB_FILE_NAME):
     if entryName not in ENTRIES:
         return 'Error: bad entry name!'
-    history = ENTRIES[entryName]
-    return history
+    entryData = ENTRIES[entryName]
+    return entryData
 
 # ~ CREATE ENTRY ~
 def CREATE_ENTRY(ENTRIES, entryName, newDate = None, dbName = DB_FILE_NAME):
@@ -255,10 +257,19 @@ def detokenizer(line):
     return main(line)
 
 def parse(key, fields, dict_structure):
+    ALL_FIELDS = [
+        'history',
+        'weight'
+    ]
+
     entryData = {}
 
     for _key in fields.keys():
         entryData[_key] = fields[_key]
+        ALL_FIELDS.remove(_key)
+
+    for _key in ALL_FIELDS:
+        entryData[_key] = None
     
     dict_structure[key] = entryData
 
@@ -288,7 +299,8 @@ def rewriteLineInFile(newLine, entryName, dbName):
             else:
                 f.write(line)
 
-RECIPES = READ_ENTRIES()
+ENTRIES = READ_ENTRIES()
+print(READ_ENTRY(ENTRIES, 'no_entry_food'))
 ### TO DO:
 # (1) Add some input sanitization : if the date is not a valid one
 #       (!) A very special task: create myself a calendar module
