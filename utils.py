@@ -24,3 +24,17 @@ def IS_INT(_var: int):
 __all__ = [
     'VALIDATE_DATE_DICT_TYPE',
     'VALIDATE_W_TYPE']
+
+
+### MASSIVE TO DO LIST:
+# (1) Add some input sanitization : if the date is not a valid one
+#       (!) A very special task: create myself a calendar module
+#
+# (n-1) When reading the data from the DB, construct TWO stacks: most recent and second most recent entries
+#       for each recipe. 
+#       Maybe also do a mean, for every food, over the course of the last year, a coefficient of how much of that
+#       certain food we have eaten -> might be useful
+# (n) About the recommending system: what if we have gaps in in the journal 
+#
+# -- script some python to pull and commit/push changes at starting/closing the app
+#    in order to save my personal cookbook db and keep it in sync with other devices 

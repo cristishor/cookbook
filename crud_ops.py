@@ -353,14 +353,3 @@ def rewriteLineInFile(newLine, entryName, dbName):
                     pass    # if newLine arg == None => line was deleted, do not write it
             else:
                 f.write(line)
-
-
-### TO DO:
-# (1) Add some input sanitization : if the date is not a valid one
-#       (!) A very special task: create myself a calendar module
-#
-# (n-1) When reading the data from the DB, construct TWO stacks: most recent and second most recent entries
-#       for each recipe. 
-#       Maybe also do a mean, for every food, over the course of the last year, a coefficient of how much of that
-#       certain food we have eaten -> might be useful
-# (n) About the recommending system: what if we have gaps in in the journal 
