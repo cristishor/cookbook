@@ -6,7 +6,6 @@ from math import floor
 
 global ENTRIES
 global LAST_COMMAND
-global ERR_FLAG
 
 global COLS, LINES
 global N_RENDERED_LINES
@@ -25,7 +24,6 @@ COMMANDS = {
 def cbinit():
     global ENTRIES
     global LAST_COMMAND
-    global ERR_FLAG
 
     global COLS, LINES
     global N_RENDERED_LINES
@@ -38,7 +36,6 @@ def cbinit():
     N_RENDERED_LINES = renderEntries()
     
     LAST_COMMAND = 'entries'
-    ERR_FLAG = 0
 
 def renderEntries(fields = None, filter = None):
     # fields: None (default)               - we only display names
@@ -66,7 +63,7 @@ def renderEntries(fields = None, filter = None):
 
     n_rows = 0
     for item in filtered:
-        n_rows += len(item) / COLS + 1
+        n_rows += floor(len(item) / COLS) + 1
         print(item)
 
     print()
@@ -88,20 +85,25 @@ def handleInput(_input):
 
 
 def dispFailedAttempt(error, args):
-    global ERR_FLAG
+    global LINES, N_RENDERED_LINES
     
     match error:
         case 'BAD_COMMAND_TYPE':
             msg = f'Invalid command - cannot use "{args[0]}" for a "{LAST_COMMAND}" type menu.'
-            ERR_FLAG = floor(len(msg) / COLS) + 1 + NEW_LINE_SZ
+            err_sz = floor(len(msg) / COLS) + 1 + NEW_LINE_SZ
 
-    print(f'Failed attempt {error}: {msg}\n')
+    for _ in range(LINES - N_RENDERED_LINES - err_sz):
+        print()
+
+    print(f'Failed attempt {error}: {msg}', end='')
+
+    stdout.write("\033[F" * (LINES - N_RENDERED_LINES - err_sz))
+
     
 
 def main():
 
     cbinit()
-    global ERR_FLAG
 
     while True:
 
@@ -117,9 +119,6 @@ def main():
         instructions, err = handleInput(user_input)
 
         if err:
-            if ERR_FLAG:
-                stdout.write("\033[F" * ERR_FLAG)
-                stdout.write("\033[K" * ERR_FLAG)
             dispFailedAttempt(err['err_name'], err['args'])
             continue
 
