@@ -1,4 +1,32 @@
 from typing import Dict
+import os
+
+CFG_FILE_PATH = '.\\config.txt'
+
+# ~ IMPORT CFG FROM CONFIG FILE ~
+
+def IMPORT_CFG(_file = CFG_FILE_PATH):
+    settings = {}
+    with open(_file) as f:
+        for line in f:
+            ind = line.find('=')
+            key = line[:ind]
+            value = line[ind+1:]
+            settings[key] = value
+    return settings
+
+# ~ DB SYNC WITH GIT
+# TO DO 
+
+
+# ~ TERMINAL OPERATIONS ~
+def getWindowSize():
+    try:
+        columns, lines = os.get_terminal_size(0)
+    except OSError:
+        columns, lines = os.get_terminal_size()
+    return columns, lines
+
 
 # ~ DATA VALIDATION ~
 
@@ -22,6 +50,10 @@ def IS_INT(_var: int):
 
 
 __all__ = [
+    'IMPORT_CFG',
+
+    'getWindowSize',
+
     'VALIDATE_DATE_DICT_TYPE',
     'VALIDATE_W_TYPE']
 
