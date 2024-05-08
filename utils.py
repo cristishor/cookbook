@@ -15,20 +15,12 @@ def IMPORT_CFG(_file = CFG_FILE_PATH):
             settings[key] = value
     return settings
 
+
 # ~ DB SYNC WITH GIT
 # TO DO 
 
 
-# ~ TERMINAL OPERATIONS ~
-def getWindowSize():
-    try:
-        columns, lines = os.get_terminal_size(0)
-    except OSError:
-        columns, lines = os.get_terminal_size()
-    return columns, lines
-
-
-# ~ DATA VALIDATION ~
+# ~ CRUD : DATA VALIDATION ~
 
 def VALIDATE_DATE_DICT_TYPE(_date: Dict[str, int]):
     required_keys = {'d', 'm', 'y'}

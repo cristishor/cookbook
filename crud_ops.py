@@ -260,6 +260,8 @@ def tokenizer(entryName, entryData):
 def detokenizer(line):
     def main(line):
         name_index = line.find(':')
+        if(name_index == -1):
+            name = line
         entryName = line[:name_index]
 
         line = line[name_index+1:]
